@@ -96,6 +96,26 @@ u64 sgx_xfrm_mask = 0x3;
 u32 sgx_misc_reserved;
 u32 sgx_xsave_size_tbl[64];
 
+#ifdef SGX_COUNTERS
+struct sgx_global_stats global_stats = {
+	.sgx_exits = 0,
+	.sgx_enter = 0,
+	.sgx_page_faults = 0,
+	.epc_misses = 0,
+	.invalidate_events = 0,
+	.flush_cpus = 0,
+	.pages_added = 0,
+	.pages_removed = 0,
+	.pages_evicted = 0,
+	.pages_blocked = 0,
+	.pages_dirty = 0,
+	.pages_load_blocked = 0,
+	.pages_load_unlocked = 0,
+	.block_check_activated = 0,
+};
+EXPORT_SYMBOL(global_stats);
+#endif
+
 #ifdef CONFIG_COMPAT
 long sgx_compat_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {

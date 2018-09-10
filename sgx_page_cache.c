@@ -77,6 +77,8 @@ static LIST_HEAD(sgx_free_list);
 static DEFINE_SPINLOCK(sgx_free_list_lock);
 
 LIST_HEAD(sgx_tgid_ctx_list);
+EXPORT_SYMBOL(sgx_tgid_ctx_list);
+
 DEFINE_MUTEX(sgx_tgid_ctx_mutex);
 atomic_t sgx_va_pages_cnt = ATOMIC_INIT(0);
 static unsigned int sgx_nr_total_epc_pages;
@@ -274,9 +276,22 @@ static int __sgx_ewb(struct sgx_encl *encl,
 	sgx_put_page(va);
 	sgx_put_page(epc);
 	sgx_put_backing(pcmd, true);
+#ifdef SGX_COUNTERS
+	encl->encl_stats->pages_dirty++;
+	global_stats.pages_dirty++;
+#endif
+
+#ifdef SGX_COUNTERS
+	encl->encl_stats->pages_evicted++;
+	global_stats.pages_evicted++;
+#endif
 
 out:
 	sgx_put_backing(backing, true);
+#ifdef SGX_COUNTERS
+	encl->encl_stats->pages_dirty++;
+	global_stats.pages_dirty++;
+#endif
 	return ret;
 }
 
@@ -298,7 +313,7 @@ static bool sgx_ewb(struct sgx_encl *encl,
 			sgx_err(encl, "EWB returned %d, enclave killed\n", ret);
 		return false;
 	}
-
+	
 	return true;
 }
 
@@ -549,6 +564,10 @@ void sgx_free_page(struct sgx_epc_page *entry, struct sgx_encl *encl)
 	list_add(&entry->list, &sgx_free_list);
 	sgx_nr_free_pages++;
 	spin_unlock(&sgx_free_list_lock);
+#ifdef SGX_COUNTERS
+	encl->encl_stats->pages_removed++;
+	global_stats.pages_removed++;
+#endif
 }
 
 void *sgx_get_page(struct sgx_epc_page *entry)

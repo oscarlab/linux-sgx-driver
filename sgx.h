@@ -77,7 +77,7 @@
 #define SGX_EINIT_SLEEP_TIME	20
 
 #define SGX_VA_SLOT_COUNT 512
-
+#define SGX_COUNTERS 1
 struct sgx_epc_page {
 	resource_size_t	pa;
 	struct list_head list;
@@ -138,6 +138,45 @@ enum sgx_encl_flags {
 	SGX_ENCL_DEAD		= BIT(4),
 };
 
+#ifdef SGX_COUNTERS
+struct sgx_global_stats {
+	u64 sgx_exits;
+	u64 sgx_enter;
+	u64 sgx_page_faults;
+	u64 epc_misses;
+	u64 invalidate_events;
+	u64 flush_cpus;
+	u64 pages_added;
+	u64 pages_removed;
+	u64 pages_evicted;
+	u64 pages_blocked;
+	u64 pages_dirty;
+	u64 pages_load_blocked;
+	u64 pages_load_unlocked;
+	u64 block_check_activated;
+};
+
+struct sgx_per_enclave_stats {
+	u64 sgx_exits;
+	u64 sgx_enter;
+	u64 sgx_page_faults;
+	u64 epc_misses;
+	u64 invalidate_events;
+	u64 flush_cpus;
+	u64 pages_added;
+	u64 pages_removed;
+	u64 pages_evicted;
+	u64 pages_blocked;
+	u64 pages_dirty;
+	u64 pages_load_blocked;
+	u64 pages_load_unlocked;
+	u64 block_check_activated;
+
+};
+
+extern struct sgx_global_stats global_stats;
+#endif
+
 struct sgx_encl {
 	unsigned int flags;
 	uint64_t attributes;
@@ -160,6 +199,9 @@ struct sgx_encl {
 	struct sgx_tgid_ctx *tgid_ctx;
 	struct list_head encl_list;
 	struct mmu_notifier mmu_notifier;
+#ifdef SGX_COUNTERS
+	struct sgx_per_enclave_stats *encl_stats;
+#endif
 };
 
 struct sgx_epc_bank {

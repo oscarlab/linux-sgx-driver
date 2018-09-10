@@ -142,6 +142,10 @@ static void sgx_ipi_cb(void *info)
 void sgx_flush_cpus(struct sgx_encl *encl)
 {
 	on_each_cpu_mask(mm_cpumask(encl->mm), sgx_ipi_cb, NULL, 1);
+#ifdef SGX_COUNTERS
+	encl->encl_stats->flush_cpus++;
+	global_stats.flush_cpus++;
+#endif
 }
 
 static int sgx_eldu(struct sgx_encl *encl,
@@ -204,6 +208,10 @@ static int sgx_eldu(struct sgx_encl *encl,
 		sgx_put_page(secs_ptr);
 
 	sgx_put_backing(pcmd, false);
+#ifdef SGX_COUNTERS
+	encl->encl_stats->pages_load_unlocked++;
+	global_stats.pages_load_unlocked++;
+#endif
 
 out:
 	sgx_put_backing(backing, false);
@@ -320,6 +328,10 @@ static struct sgx_encl_page *sgx_do_fault(struct vm_area_struct *vma,
 	}
 
 	sgx_test_and_clear_young(entry, encl);
+#ifdef SGX_COUNTERS
+	encl->encl_stats->sgx_page_faults++;
+	global_stats.sgx_page_faults++;
+#endif
 out:
 	mutex_unlock(&encl->lock);
 	if (epc_page)
@@ -358,6 +370,10 @@ void sgx_eblock(struct sgx_encl *encl, struct sgx_epc_page *epc_page)
 		sgx_invalidate(encl, true);
 	}
 
+#ifdef SGX_COUNTERS
+	encl->encl_stats->pages_blocked++;
+	global_stats.pages_blocked++;
+#endif
 }
 
 void sgx_etrack(struct sgx_encl *encl)
@@ -373,4 +389,8 @@ void sgx_etrack(struct sgx_encl *encl)
 		sgx_crit(encl, "ETRACK returned %d\n", ret);
 		sgx_invalidate(encl, true);
 	}
+#ifdef SGX_COUNTERS
+	encl->encl_stats->block_check_activated++;
+	global_stats.block_check_activated++;
+#endif
 }

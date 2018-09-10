@@ -326,6 +326,11 @@ static void sgx_add_page_worker(struct work_struct *work)
 		mutex_unlock(&encl->lock);
 		up_read(&encl->mm->mmap_sem);
 
+#ifdef SGX_COUNTERS
+		global_stats.pages_added++;
+		encl->encl_stats->pages_added++;
+#endif
+
 next:
 		kfree(req);
 	} while (!kref_put(&encl->refcount, sgx_encl_release) && !is_empty);
@@ -547,7 +552,23 @@ static struct sgx_encl *sgx_encl_alloc(struct sgx_secs *secs)
 	INIT_LIST_HEAD(&encl->encl_list);
 	mutex_init(&encl->lock);
 	INIT_WORK(&encl->add_page_work, sgx_add_page_worker);
-
+#ifdef SGX_COUNTERS
+	encl->encl_stats = kzalloc(sizeof(*(encl->encl_stats)), GFP_KERNEL);
+	encl->encl_stats->sgx_exits = 0;
+	encl->encl_stats->sgx_enter = 0;
+	encl->encl_stats->sgx_page_faults = 0;
+	encl->encl_stats->epc_misses = 0;
+	encl->encl_stats->invalidate_events = 0;
+	encl->encl_stats->flush_cpus = 0;
+	encl->encl_stats->pages_added = 0;
+	encl->encl_stats->pages_removed = 0;
+	encl->encl_stats->pages_evicted = 0;
+	encl->encl_stats->pages_blocked = 0;
+	encl->encl_stats->pages_dirty = 0;
+	encl->encl_stats->pages_load_blocked = 0;
+	encl->encl_stats->pages_load_unlocked = 0;
+	encl->encl_stats->block_check_activated = 0;
+#endif
 	encl->mm = current->mm;
 	encl->base = secs->base;
 	encl->size = secs->size;
@@ -820,7 +841,10 @@ static int __sgx_encl_add_page(struct sgx_encl *encl,
 		queue_work(sgx_add_page_wq, &encl->add_page_work);
 
 	sgx_put_backing(backing, true /* write */);
-
+#ifdef SGX_COUNTERS
+	encl->encl_stats->pages_dirty++;
+	global_stats.pages_dirty++;
+#endif
 	mutex_unlock(&encl->lock);
 	return 0;
 out:

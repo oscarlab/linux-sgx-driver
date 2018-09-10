@@ -7,6 +7,7 @@ ifneq ($(KERNELRELEASE),)
 		sgx_util.o\
 		sgx_encl.o
 	obj-m += isgx.o
+	obj-m += sgx_proc.o
 else
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD  := $(shell pwd)
